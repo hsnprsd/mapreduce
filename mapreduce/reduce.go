@@ -8,10 +8,10 @@ import (
 type Reducer func(key string, values chan string) string
 
 type ReduceTask struct {
-	MapperResults []*MapTaskResult
-	Partition     int
-	Reducer       Reducer
-	Output        Output
+	MapTasksResults chan *MapTaskResult
+	Partition       int
+	Reducer         Reducer
+	Output          Output
 }
 
 type ReduceTaskResult struct {
@@ -21,7 +21,7 @@ type ReduceTaskResult struct {
 func (t *ReduceTask) Execute() ReduceTaskResult {
 	// read mapper outputs
 	input := make(map[string][]string)
-	for _, r := range t.MapperResults {
+	for r := range t.MapTasksResults {
 		if r.Err != nil {
 			return ReduceTaskResult{Err: r.Err}
 		}
