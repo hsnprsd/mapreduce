@@ -10,6 +10,7 @@ type Mapper func(kv KV) []KV
 
 type MapTask struct {
 	Input       string
+	InputDes    Des
 	Mapper      Mapper
 	R           uint32
 	Partitioner Partitioner
@@ -30,18 +31,19 @@ func (m *MapTask) Execute() *MapTaskResult {
 		result.Err = err
 		return result
 	}
-	input := r.Read(m.Input)
+	data, err := r.Read(m.Input)
 	if err != nil {
 		result.Err = err
 		return result
 	}
+	input := m.InputDes.Deserialize(data)
 
 	// map
 	partitions := make([][]KV, m.R)
 	for i := range partitions {
 		partitions[i] = make([]KV, 0)
 	}
-	for i := range input {
+	for _, i := range input {
 		for _, kv := range m.Mapper(i) {
 			part := m.Partitioner.Partition(kv.Key)
 			partitions[part] = append(partitions[part], kv)

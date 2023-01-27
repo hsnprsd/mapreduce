@@ -28,7 +28,7 @@ func Add(key string, values chan string) string {
 
 func main() {
 	m := mapreduce.MapReduce{
-		Input:   mapreduce.Input{FilePattern: "./input/*"},
+		Input:   mapreduce.Input{FilePattern: "./input/*", Des: &mapreduce.TextDes{}},
 		Mapper:  WordCount,
 		R:       8,
 		Reducer: Add,

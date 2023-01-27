@@ -7,6 +7,7 @@ import (
 
 type Input struct {
 	FilePattern string
+	Des         Des
 }
 
 type KV struct {
@@ -58,6 +59,7 @@ func (m *MapReduce) Execute() error {
 	for i, file := range files {
 		mapTasks[i] = MapTask{
 			Input:       file,
+			InputDes:    m.Input.Des,
 			Mapper:      m.Mapper,
 			R:           m.R,
 			Partitioner: HashPartitioner{Mod: m.R},
