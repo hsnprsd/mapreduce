@@ -42,7 +42,7 @@ func (m *MapTask) Execute() *MapTaskResult {
 	}
 	for i := range input {
 		for _, kv := range m.Mapper(i) {
-			part := m.Partitioner.Partition(kv)
+			part := m.Partitioner.Partition(kv.Key)
 			partitions[part] = append(partitions[part], kv)
 		}
 	}
