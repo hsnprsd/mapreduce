@@ -30,7 +30,7 @@ func main() {
 	m := mapreduce.MapReduce{
 		Input:   mapreduce.Input{FilePattern: "./input/*"},
 		Mapper:  WordCount,
-		R:       1,
+		R:       8,
 		Reducer: Add,
 		Output:  mapreduce.Output{FileBase: "./output"},
 	}
