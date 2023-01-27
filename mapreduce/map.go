@@ -17,6 +17,7 @@ type MapTask struct {
 
 type MapTaskResult struct {
 	OutputBaseLocation string
+	OutputSerDes       SerDes
 	Err                error
 }
 
@@ -48,6 +49,8 @@ func (m *MapTask) Execute() *MapTaskResult {
 	}
 
 	// write output
+	serdes := &JsonSerDes{}
+
 	dir, err := ioutil.TempDir(os.TempDir(), "mapper_output_")
 	if err != nil {
 		result.Err = err
@@ -60,10 +63,11 @@ func (m *MapTask) Execute() *MapTaskResult {
 			result.Err = err
 			return result
 		}
-		f.Write(serialize(r))
+		f.Write(serdes.Serialize(r))
 	}
 
 	return &MapTaskResult{
 		OutputBaseLocation: dir,
+		OutputSerDes:       serdes,
 	}
 }

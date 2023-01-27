@@ -30,7 +30,7 @@ func (t *ReduceTask) Execute() ReduceTaskResult {
 		if err != nil {
 			panic(err)
 		}
-		kvs := deserialize(data)
+		kvs := r.OutputSerDes.Deserialize(data)
 		for _, kv := range kvs {
 			_, ok := input[kv.Key]
 			if !ok {
