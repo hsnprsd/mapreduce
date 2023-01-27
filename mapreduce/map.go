@@ -11,6 +11,7 @@ type Mapper func(kv KV) []KV
 type MapTask struct {
 	Input       string
 	Mapper      Mapper
+	R           uint32
 	Partitioner Partitioner
 }
 
@@ -32,9 +33,15 @@ func (m *MapTask) Execute() *MapTaskResult {
 		result.Err = err
 		return result
 	}
-	kvs := make([]KV, 0)
+	kvs := make([][]KV, m.R)
+	for i := range kvs {
+		kvs[i] = make([]KV, 0)
+	}
 	for i := range input {
-		kvs = append(kvs, m.Mapper(i)...)
+		for _, kv := range m.Mapper(i) {
+			part := m.Partitioner.Partition(kv)
+			kvs[part] = append(kvs[part], kv)
+		}
 	}
 
 	dir, err := ioutil.TempDir(os.TempDir(), "mapper_output_")
@@ -42,8 +49,7 @@ func (m *MapTask) Execute() *MapTaskResult {
 		result.Err = err
 		return result
 	}
-	results := m.Partitioner.Partition(kvs)
-	for i, r := range results {
+	for i, r := range kvs {
 		// write result to output location
 		f, err := os.Create(dir + "/" + fmt.Sprintf("part-%d", i))
 		if err != nil {

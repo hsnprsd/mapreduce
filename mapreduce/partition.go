@@ -5,23 +5,15 @@ import (
 )
 
 type Partitioner interface {
-	Partition([]KV) [][]KV
+	Partition(kv KV) uint32
 }
 
 type HashPartitioner struct {
-	Mod int
+	Mod uint32
 }
 
-func (p HashPartitioner) Partition(kvs []KV) [][]KV {
-	partitions := make([][]KV, p.Mod)
-	for i := range partitions {
-		partitions[i] = make([]KV, 0)
-	}
-	for _, kv := range kvs {
-		h := fnv.New32a()
-		h.Write([]byte(kv.Key))
-		part := h.Sum32() % uint32(p.Mod)
-		partitions[part] = append(partitions[part], kv)
-	}
-	return partitions
+func (p HashPartitioner) Partition(kv KV) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(kv.Key))
+	return h.Sum32() % p.Mod
 }

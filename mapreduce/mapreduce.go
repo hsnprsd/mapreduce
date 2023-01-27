@@ -20,7 +20,7 @@ type Output struct {
 type MapReduce struct {
 	Input   Input
 	Mapper  Mapper
-	R       int
+	R       uint32
 	Reducer Reducer
 	Output  Output
 }
@@ -36,6 +36,7 @@ func (m *MapReduce) Execute() error {
 		mapTasks[i] = MapTask{
 			Input:       file,
 			Mapper:      m.Mapper,
+			R:           m.R,
 			Partitioner: HashPartitioner{Mod: m.R},
 		}
 	}
@@ -46,7 +47,7 @@ func (m *MapReduce) Execute() error {
 	}
 
 	reduceTasks := make([]ReduceTask, m.R)
-	for i := 0; i < m.R; i++ {
+	for i := range reduceTasks {
 		reduceTasks[i] = ReduceTask{
 			MapperResults: mapTasksResults,
 			Partition:     i,
