@@ -23,6 +23,7 @@ type MapTaskResult struct {
 func (m *MapTask) Execute() *MapTaskResult {
 	result := &MapTaskResult{}
 
+	// read input
 	r, err := NewInputReader(m.Input)
 	if err != nil {
 		result.Err = err
@@ -33,23 +34,26 @@ func (m *MapTask) Execute() *MapTaskResult {
 		result.Err = err
 		return result
 	}
-	kvs := make([][]KV, m.R)
-	for i := range kvs {
-		kvs[i] = make([]KV, 0)
+
+	// map
+	partitions := make([][]KV, m.R)
+	for i := range partitions {
+		partitions[i] = make([]KV, 0)
 	}
 	for i := range input {
 		for _, kv := range m.Mapper(i) {
 			part := m.Partitioner.Partition(kv)
-			kvs[part] = append(kvs[part], kv)
+			partitions[part] = append(partitions[part], kv)
 		}
 	}
 
+	// write output
 	dir, err := ioutil.TempDir(os.TempDir(), "mapper_output_")
 	if err != nil {
 		result.Err = err
 		return result
 	}
-	for i, r := range kvs {
+	for i, r := range partitions {
 		// write result to output location
 		f, err := os.Create(dir + "/" + fmt.Sprintf("part-%d", i))
 		if err != nil {
