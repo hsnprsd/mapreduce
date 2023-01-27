@@ -53,12 +53,14 @@ func (t *ReduceTask) Execute() ReduceTaskResult {
 		kvs = append(kvs, KV{Key: k, Value: v})
 	}
 	// write output
-	w := CSVOutputWriter{}
-	f, err := os.Create(fmt.Sprintf("%s/part-%d.csv", t.Output.FileBase, t.Partition))
+	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))
 	if err != nil {
 		return ReduceTaskResult{Err: err}
 	}
-	w.Write(f, kvs)
+	_, err = f.Write(t.Output.Ser.Serialize(kvs))
+	if err != nil {
+		return ReduceTaskResult{Err: err}
+	}
 
 	return ReduceTaskResult{}
 }

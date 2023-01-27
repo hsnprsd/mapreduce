@@ -32,7 +32,7 @@ func main() {
 		Mapper:  WordCount,
 		R:       8,
 		Reducer: Add,
-		Output:  mapreduce.Output{FileBase: "./output"},
+		Output:  mapreduce.Output{FileBase: "./output", Ser: &mapreduce.CSVSer{}},
 	}
 	err := m.Execute()
 	if err != nil {

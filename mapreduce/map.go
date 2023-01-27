@@ -23,18 +23,10 @@ type MapTaskResult struct {
 }
 
 func (m *MapTask) Execute() *MapTaskResult {
-	result := &MapTaskResult{}
-
 	// read input
-	r, err := NewInputReader(m.Input)
+	data, err := os.ReadFile(m.Input)
 	if err != nil {
-		result.Err = err
-		return result
-	}
-	data, err := r.Read(m.Input)
-	if err != nil {
-		result.Err = err
-		return result
+		return &MapTaskResult{Err: err}
 	}
 	input := m.InputDes.Deserialize(data)
 
@@ -55,15 +47,13 @@ func (m *MapTask) Execute() *MapTaskResult {
 
 	dir, err := ioutil.TempDir(os.TempDir(), "mapper_output_")
 	if err != nil {
-		result.Err = err
-		return result
+		return &MapTaskResult{Err: err}
 	}
 	for i, r := range partitions {
 		// write result to output location
 		f, err := os.Create(dir + "/" + fmt.Sprintf("part-%d", i))
 		if err != nil {
-			result.Err = err
-			return result
+			return &MapTaskResult{Err: err}
 		}
 		f.Write(serdes.Serialize(r))
 	}

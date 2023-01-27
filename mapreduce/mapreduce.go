@@ -17,6 +17,7 @@ type KV struct {
 
 type Output struct {
 	FileBase string
+	Ser      Ser
 }
 
 type MapReduce struct {
