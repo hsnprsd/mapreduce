@@ -3,14 +3,16 @@ package mapreduce
 import "encoding/json"
 
 type Ser interface {
+	Serialize(kv []KV) []byte
 }
 
 type Des interface {
+	Deserialize(data []byte) []KV
 }
 
 type SerDes interface {
-	Serialize(kv []KV) []byte
-	Deserialize(data []byte) []KV
+	Ser
+	Des
 }
 
 type JsonSerDes struct {
