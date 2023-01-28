@@ -1,7 +1,5 @@
 package mapreduce
 
-import "fmt"
-
 type DataSet struct {
 	input   Input
 	mappers []Mapper
@@ -37,7 +35,6 @@ func (d *GroupedDataSet) Sum() *DataSet {
 }
 
 func (d *DataSet) Write(output Output, numPartitions uint32) error {
-	fmt.Println(d)
 	mr := MapReduce{
 		Input:   d.input,
 		Mapper:  ChainMapper(d.mappers...),
