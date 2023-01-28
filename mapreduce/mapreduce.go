@@ -92,7 +92,7 @@ func (m *MapReduce) Execute() error {
 
 	for i := 0; i < len(reduceTasks); i++ {
 		r := <-reduceTasksResults
-		log.Printf("%d out of %d reduce tasks finished", i, len(reduceTasks))
+		log.Printf("%d out of %d reduce tasks finished", i+1, len(reduceTasks))
 		if r.Err != nil {
 			return r.Err
 		}
