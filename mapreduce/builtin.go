@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-func IdentityMapper(kv KV) []KV {
-	return []KV{kv}
+func IdentityMapper(kv *KV) []*KV {
+	return []*KV{kv}
 }
 
 func SwapKVMapper(kv *KV) []*KV {
