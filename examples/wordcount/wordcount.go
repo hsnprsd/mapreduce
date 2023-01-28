@@ -2,21 +2,10 @@ package main
 
 import (
 	"log"
-	"strings"
 	"time"
 
 	"hsnprsd.fun/mapreduce/mapreduce"
 )
-
-func WordCount(kv mapreduce.KV) []mapreduce.KV {
-	result := make([]mapreduce.KV, 0)
-	words := strings.Split(kv.Value, " ")
-	for _, w := range words {
-		w = strings.TrimSpace(w)
-		result = append(result, mapreduce.KV{Key: w, Value: "1"})
-	}
-	return result
-}
 
 func main() {
 	ts := time.Now().UnixMilli()
