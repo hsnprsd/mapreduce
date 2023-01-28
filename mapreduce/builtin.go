@@ -57,9 +57,7 @@ func ChainMapper(mappers ...Mapper) Mapper {
 		allKVs := make([]KV, 0)
 		kvs := headMapper(kv)
 		for _, kv := range kvs {
-			for _, _kv := range tailMapper(kv) {
-				allKVs = append(allKVs, _kv)
-			}
+			allKVs = append(allKVs, tailMapper(kv)...)
 		}
 		return allKVs
 	}
