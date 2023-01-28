@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-type Mapper func(kv KV) []KV
+type Mapper func(kv *KV) []*KV
 
 type MapTask struct {
 	Input       string
@@ -31,9 +31,9 @@ func (m *MapTask) Execute() *MapTaskResult {
 	input := m.InputDes.Deserialize(data)
 
 	// map
-	partitions := make([][]KV, m.R)
+	partitions := make([][]*KV, m.R)
 	for i := range partitions {
-		partitions[i] = make([]KV, 0)
+		partitions[i] = make([]*KV, 0)
 	}
 	for _, i := range input {
 		for _, kv := range m.Mapper(i) {

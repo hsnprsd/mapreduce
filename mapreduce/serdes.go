@@ -9,11 +9,11 @@ import (
 )
 
 type Ser interface {
-	Serialize(kvs []KV) []byte
+	Serialize(kvs []*KV) []byte
 }
 
 type Des interface {
-	Deserialize(data []byte) []KV
+	Deserialize(data []byte) []*KV
 }
 
 type SerDes interface {
@@ -24,7 +24,7 @@ type SerDes interface {
 type JsonSerDes struct {
 }
 
-func (sd *JsonSerDes) Serialize(kvs []KV) []byte {
+func (sd *JsonSerDes) Serialize(kvs []*KV) []byte {
 	data, err := json.Marshal(kvs)
 	if err != nil {
 		panic(err)
@@ -32,8 +32,8 @@ func (sd *JsonSerDes) Serialize(kvs []KV) []byte {
 	return data
 }
 
-func (sd *JsonSerDes) Deserialize(data []byte) []KV {
-	kvs := make([]KV, 0)
+func (sd *JsonSerDes) Deserialize(data []byte) []*KV {
+	kvs := make([]*KV, 0)
 	err := json.Unmarshal(data, &kvs)
 	if err != nil {
 		panic(err)
@@ -44,11 +44,11 @@ func (sd *JsonSerDes) Deserialize(data []byte) []KV {
 type TextDes struct {
 }
 
-func (d *TextDes) Deserialize(data []byte) []KV {
-	kvs := make([]KV, 0)
+func (d *TextDes) Deserialize(data []byte) []*KV {
+	kvs := make([]*KV, 0)
 	lines := strings.Split(string(data), "\n")
 	for i, line := range lines {
-		kvs = append(kvs, KV{Key: strconv.Itoa(i), Value: line})
+		kvs = append(kvs, &KV{Key: strconv.Itoa(i), Value: line})
 	}
 	return kvs
 }
@@ -56,7 +56,7 @@ func (d *TextDes) Deserialize(data []byte) []KV {
 type CSVSer struct {
 }
 
-func (s *CSVSer) Serialize(kvs []KV) []byte {
+func (s *CSVSer) Serialize(kvs []*KV) []byte {
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
 	for _, kv := range kvs {

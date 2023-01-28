@@ -40,7 +40,7 @@ func (t *ReduceTask) Execute() *ReduceTaskResult {
 		}
 	}
 	// reduce
-	kvs := make([]KV, 0)
+	kvs := make([]*KV, 0)
 	for k, vs := range input {
 		c := make(chan string)
 		go func() {
@@ -50,7 +50,7 @@ func (t *ReduceTask) Execute() *ReduceTaskResult {
 			}
 		}()
 		v := t.Reducer(k, c)
-		kvs = append(kvs, KV{Key: k, Value: v})
+		kvs = append(kvs, &KV{Key: k, Value: v})
 	}
 	// write output
 	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))
