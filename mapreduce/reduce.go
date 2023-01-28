@@ -18,12 +18,12 @@ type ReduceTaskResult struct {
 	Err error
 }
 
-func (t *ReduceTask) Execute() ReduceTaskResult {
+func (t *ReduceTask) Execute() *ReduceTaskResult {
 	// read mapper outputs
 	input := make(map[string][]string)
 	for r := range t.MapTasksResults {
 		if r.Err != nil {
-			return ReduceTaskResult{Err: r.Err}
+			return &ReduceTaskResult{Err: r.Err}
 		}
 		mapperOutput := fmt.Sprintf("%s/part-%d", r.OutputBaseLocation, t.Partition)
 		data, err := os.ReadFile(mapperOutput)
@@ -55,12 +55,12 @@ func (t *ReduceTask) Execute() ReduceTaskResult {
 	// write output
 	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))
 	if err != nil {
-		return ReduceTaskResult{Err: err}
+		return &ReduceTaskResult{Err: err}
 	}
 	_, err = f.Write(t.Output.Ser.Serialize(kvs))
 	if err != nil {
-		return ReduceTaskResult{Err: err}
+		return &ReduceTaskResult{Err: err}
 	}
 
-	return ReduceTaskResult{}
+	return &ReduceTaskResult{}
 }
