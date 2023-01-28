@@ -21,10 +21,7 @@ func RandStringRunes(n int) string {
 func RandText(words int, wordLength int) []byte {
 	var s bytes.Buffer
 	for i := 0; i < words; i++ {
-		if s.Len() > 0 {
-			s.WriteString(" ")
-		}
-		s.WriteString(RandStringRunes(wordLength))
+		s.WriteString(RandStringRunes(wordLength) + "\n")
 	}
 	return s.Bytes()
 }
