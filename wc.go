@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,28 +18,15 @@ func WordCount(kv mapreduce.KV) []mapreduce.KV {
 	return result
 }
 
-func Add(key string, values chan string) string {
-	sum := 0
-	for val := range values {
-		i, _ := strconv.Atoi(val)
-		sum += i
-	}
-	return strconv.Itoa(sum)
-}
-
 func main() {
 	ts := time.Now().UnixMilli()
-	m := mapreduce.MapReduce{
-		Input:   mapreduce.Input{FilePattern: "./input/*", Des: &mapreduce.TextDes{}},
-		Mapper:  WordCount,
-		R:       8,
-		Reducer: Add,
-		Output:  mapreduce.Output{FileBase: "./output", Ser: &mapreduce.CSVSer{}},
-	}
-	err := m.Execute()
+
+	ds := mapreduce.NewDataSet(mapreduce.Input{FilePattern: "./input/*", Des: &mapreduce.TextDes{}})
+	err := ds.SplitValue().GroupByValue().Count().Write(mapreduce.Output{FileBase: "./output", Ser: &mapreduce.CSVSer{}}, 1)
 	if err != nil {
 		panic(err)
 	}
+
 	endTs := time.Now().UnixMilli()
 	log.Printf("TOTAL RUNTIME = %f", float32(endTs-ts)/float32(1000))
 }
