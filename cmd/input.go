@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"os"
@@ -17,15 +18,15 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func RandText(words int, wordLength int) string {
-	s := ""
+func RandText(words int, wordLength int) []byte {
+	var s bytes.Buffer
 	for i := 0; i < words; i++ {
-		if len(s) > 0 {
-			s += " "
+		if s.Len() > 0 {
+			s.WriteString(" ")
 		}
-		s += RandStringRunes(wordLength)
+		s.WriteString(RandStringRunes(wordLength))
 	}
-	return s
+	return s.Bytes()
 }
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			_, err = f.Write([]byte(RandText(1000, 1)))
+			_, err = f.Write(RandText(10000000, 1))
 			if err != nil {
 				panic(err)
 			}
