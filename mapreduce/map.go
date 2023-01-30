@@ -42,7 +42,7 @@ func (m *MapTask) Execute() *MapTaskResult {
 		defer close(keyReduceTasks)
 
 		keyPartitions := make(map[string][]string)
-		for _, i := range input {
+		for i := range input {
 			for _, kv := range m.Mapper(i) {
 				if _, ok := keyPartitions[kv.Key]; !ok {
 					keyPartitions[kv.Key] = make([]string, 0)

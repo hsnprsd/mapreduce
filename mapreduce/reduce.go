@@ -31,7 +31,7 @@ func (t *ReduceTask) Execute() *ReduceTaskResult {
 			panic(err)
 		}
 		kvs := r.OutputSerDes.Deserialize(data)
-		for _, kv := range kvs {
+		for kv := range kvs {
 			_, ok := input[kv.Key]
 			if !ok {
 				input[kv.Key] = make([]string, 0)
