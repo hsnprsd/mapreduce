@@ -1,9 +1,10 @@
 package mapreduce
 
 type DataSet struct {
-	input   Input
-	mappers []Mapper
-	reducer Reducer
+	input    Input
+	mappers  []Mapper
+	combiner Reducer
+	reducer  Reducer
 }
 
 type GroupedDataSet struct {
@@ -25,22 +26,25 @@ func (d *DataSet) GroupByValue() *GroupedDataSet {
 }
 
 func (d *GroupedDataSet) Count() *DataSet {
-	d.parent.reducer = CountReducer
+	d.parent.combiner = CountReducer
+	d.parent.reducer = SumReducer
 	return d.parent
 }
 
 func (d *GroupedDataSet) Sum() *DataSet {
+	d.parent.combiner = SumReducer
 	d.parent.reducer = SumReducer
 	return d.parent
 }
 
 func (d *DataSet) Write(output Output, numPartitions uint32) error {
 	mr := MapReduce{
-		Input:   d.input,
-		Mapper:  ChainMapper(d.mappers...),
-		R:       numPartitions,
-		Reducer: d.reducer,
-		Output:  output,
+		Input:    d.input,
+		Mapper:   ChainMapper(d.mappers...),
+		Combiner: d.combiner,
+		R:        numPartitions,
+		Reducer:  d.reducer,
+		Output:   output,
 	}
 	return mr.Execute()
 }

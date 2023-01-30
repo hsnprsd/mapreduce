@@ -21,11 +21,12 @@ type Output struct {
 }
 
 type MapReduce struct {
-	Input   Input
-	Mapper  Mapper
-	R       uint32
-	Reducer Reducer
-	Output  Output
+	Input    Input
+	Mapper   Mapper
+	Combiner Reducer
+	R        uint32
+	Reducer  Reducer
+	Output   Output
 }
 
 func (m *MapReduce) Execute() error {
@@ -42,6 +43,7 @@ func (m *MapReduce) Execute() error {
 			Input:       file,
 			InputDes:    m.Input.Des,
 			Mapper:      m.Mapper,
+			Combiner:    m.Combiner,
 			R:           m.R,
 			Partitioner: HashPartitioner{Mod: m.R},
 		}

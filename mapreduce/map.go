@@ -12,6 +12,7 @@ type MapTask struct {
 	Input       string
 	InputDes    Des
 	Mapper      Mapper
+	Combiner    Reducer
 	R           uint32
 	Partitioner Partitioner
 }
@@ -20,6 +21,11 @@ type MapTaskResult struct {
 	OutputBaseLocation string
 	OutputSerDes       SerDes
 	Err                error
+}
+
+type keyReduceTask struct {
+	Key    string
+	Values chan string
 }
 
 func (m *MapTask) Execute() *MapTaskResult {
@@ -31,15 +37,38 @@ func (m *MapTask) Execute() *MapTaskResult {
 	input := m.InputDes.Deserialize(data)
 
 	// map
+	keyReduceTasks := make(chan *keyReduceTask)
+	go func() {
+		defer close(keyReduceTasks)
+
+		keyPartitions := make(map[string][]string)
+		for _, i := range input {
+			for _, kv := range m.Mapper(i) {
+				if _, ok := keyPartitions[kv.Key]; !ok {
+					keyPartitions[kv.Key] = make([]string, 0)
+				}
+				keyPartitions[kv.Key] = append(keyPartitions[kv.Key], kv.Value)
+			}
+		}
+
+		for k, vs := range keyPartitions {
+			c := make(chan string, len(vs))
+			for _, v := range vs {
+				c <- v
+			}
+			close(c)
+			keyReduceTasks <- &keyReduceTask{Key: k, Values: c}
+		}
+	}()
+
 	partitions := make([][]*KV, m.R)
 	for i := range partitions {
 		partitions[i] = make([]*KV, 0)
 	}
-	for _, i := range input {
-		for _, kv := range m.Mapper(i) {
-			part := m.Partitioner.Partition(kv.Key)
-			partitions[part] = append(partitions[part], kv)
-		}
+	for t := range keyReduceTasks {
+		v := m.Combiner(t.Key, t.Values)
+		part := m.Partitioner.Partition(t.Key)
+		partitions[part] = append(partitions[part], &KV{Key: t.Key, Value: v})
 	}
 
 	// write output
