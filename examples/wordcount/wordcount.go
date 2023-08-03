@@ -29,12 +29,12 @@ func main() {
 	ts := time.Now().UnixMilli()
 
 	mr := mapreduce.MapReduce[string, int, int, int]{
-		Input:    mapreduce.Input[string]{FilePattern: "./input/part-0.txt", Des: &mapreduce.TextDes{}},
+		Reader:   mapreduce.Reader[string]{FilePattern: "./input/part-0.txt", Des: &mapreduce.TextDes{}},
 		Mapper:   Map,
 		Combiner: Reduce,
 		R:        4,
 		Reducer:  Reduce,
-		Output: mapreduce.Output[int]{
+		Writer: mapreduce.Writer[int]{
 			FileBase: "./output",
 			Ser:      &mapreduce.JsonSerDes[int]{},
 		},

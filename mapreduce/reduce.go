@@ -11,7 +11,7 @@ type ReduceTask[T, U any] struct {
 	MapTasksResults chan *MapTaskResult[T]
 	Partition       int
 	Reducer         Reducer[T, U]
-	Output          Output[U]
+	Output          Writer[U]
 }
 
 type ReduceTaskResult struct {

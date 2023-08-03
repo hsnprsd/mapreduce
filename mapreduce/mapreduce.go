@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-type Input[A any] struct {
+type Reader[A any] struct {
 	FilePattern string
 	Des         Des[A]
 }
@@ -15,23 +15,23 @@ type KV[T any] struct {
 	Value T
 }
 
-type Output[A any] struct {
+type Writer[A any] struct {
 	FileBase string
 	Ser      Ser[A]
 }
 
 type MapReduce[I, M, C, R any] struct {
-	Input    Input[I]
+	Reader   Reader[I]
 	Mapper   Mapper[I, M]
 	Combiner Reducer[M, C]
 	R        uint32
 	Reducer  Reducer[C, R]
-	Output   Output[R]
+	Writer   Writer[R]
 }
 
 func (m *MapReduce[I, M, C, R]) Execute() error {
 	// find input files
-	files, err := filepath.Glob(m.Input.FilePattern)
+	files, err := filepath.Glob(m.Reader.FilePattern)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (m *MapReduce[I, M, C, R]) Execute() error {
 	for i, file := range files {
 		mapTasks[i] = MapTask[I, M, C]{
 			Input:       file,
-			InputDes:    m.Input.Des,
+			InputDes:    m.Reader.Des,
 			Mapper:      m.Mapper,
 			Combiner:    m.Combiner,
 			R:           m.R,
@@ -68,7 +68,7 @@ func (m *MapReduce[I, M, C, R]) Execute() error {
 			MapTasksResults: reducersMapTasksResults[i],
 			Partition:       i,
 			Reducer:         m.Reducer,
-			Output:          m.Output,
+			Output:          m.Writer,
 		}
 	}
 	go func() {
