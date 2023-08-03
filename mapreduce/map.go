@@ -2,7 +2,6 @@ package mapreduce
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -74,7 +73,7 @@ func (m *MapTask) Execute() *MapTaskResult {
 	// write output
 	serdes := &JsonSerDes{}
 
-	dir, err := ioutil.TempDir(os.TempDir(), "mapper_output_")
+	dir, err := os.MkdirTemp(os.TempDir(), "mapper_output_")
 	if err != nil {
 		return &MapTaskResult{Err: err}
 	}
