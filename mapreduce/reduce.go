@@ -5,22 +5,22 @@ import (
 	"os"
 )
 
-type Reducer func(key string, values chan string) string
+type Reducer[T, U any] func(key string, values chan T) U
 
-type ReduceTask struct {
-	MapTasksResults chan *MapTaskResult
+type ReduceTask[T, U any] struct {
+	MapTasksResults chan *MapTaskResult[T]
 	Partition       int
-	Reducer         Reducer
-	Output          Output
+	Reducer         Reducer[T, U]
+	Output          Output[U]
 }
 
 type ReduceTaskResult struct {
 	Err error
 }
 
-func (t *ReduceTask) Execute() *ReduceTaskResult {
+func (t *ReduceTask[T, U]) Execute() *ReduceTaskResult {
 	// read mapper outputs
-	input := make(map[string][]string)
+	input := make(map[string][]T)
 	for r := range t.MapTasksResults {
 		if r.Err != nil {
 			return &ReduceTaskResult{Err: r.Err}
@@ -34,15 +34,15 @@ func (t *ReduceTask) Execute() *ReduceTaskResult {
 		for kv := range kvs {
 			_, ok := input[kv.Key]
 			if !ok {
-				input[kv.Key] = make([]string, 0)
+				input[kv.Key] = make([]T, 0)
 			}
 			input[kv.Key] = append(input[kv.Key], kv.Value)
 		}
 	}
 	// reduce
-	kvs := make([]*KV, 0)
+	kvs := make([]*KV[U], 0)
 	for k, vs := range input {
-		c := make(chan string)
+		c := make(chan T)
 		go func() {
 			defer close(c)
 			for _, v := range vs {
@@ -50,7 +50,7 @@ func (t *ReduceTask) Execute() *ReduceTaskResult {
 			}
 		}()
 		v := t.Reducer(k, c)
-		kvs = append(kvs, &KV{Key: k, Value: v})
+		kvs = append(kvs, &KV[U]{Key: k, Value: v})
 	}
 	// write output
 	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))

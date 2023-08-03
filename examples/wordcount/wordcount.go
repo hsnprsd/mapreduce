@@ -2,16 +2,44 @@ package main
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"hsnprsd.fun/mapreduce/mapreduce"
 )
 
+func Map(kv *mapreduce.KV[string]) []*mapreduce.KV[int] {
+	words := strings.Split(kv.Value, " ")
+	result := make([]*mapreduce.KV[int], 0)
+	for _, w := range words {
+		result = append(result, &mapreduce.KV[int]{Key: w, Value: 1})
+	}
+	return result
+}
+
+func Reduce(key string, values chan int) int {
+	sum := 0
+	for v := range values {
+		sum += v
+	}
+	return sum
+}
+
 func main() {
 	ts := time.Now().UnixMilli()
 
-	ds := mapreduce.NewDataSet(mapreduce.Input{FilePattern: "./input/*", Des: &mapreduce.TextDes{}})
-	err := ds.SplitValue().GroupByValue().Count().Write(mapreduce.Output{FileBase: "./output", Ser: &mapreduce.CSVSer{}}, 1)
+	mr := mapreduce.MapReduce[string, int, int, int]{
+		Input:    mapreduce.Input[string]{FilePattern: "./input/part-0.txt", Des: &mapreduce.TextDes{}},
+		Mapper:   Map,
+		Combiner: Reduce,
+		R:        4,
+		Reducer:  Reduce,
+		Output: mapreduce.Output[int]{
+			FileBase: "./output",
+			Ser:      &mapreduce.JsonSerDes[int]{},
+		},
+	}
+	err := mr.Execute()
 	if err != nil {
 		panic(err)
 	}

@@ -1,30 +1,28 @@
 package mapreduce
 
 import (
-	"bytes"
-	"encoding/csv"
 	"encoding/json"
 	"strconv"
 	"strings"
 )
 
-type Ser interface {
-	Serialize(kvs []*KV) []byte
+type Ser[T any] interface {
+	Serialize(kvs []*KV[T]) []byte
 }
 
-type Des interface {
-	Deserialize(data []byte) chan *KV
+type Des[T any] interface {
+	Deserialize(data []byte) chan *KV[T]
 }
 
-type SerDes interface {
-	Ser
-	Des
+type SerDes[T any] interface {
+	Ser[T]
+	Des[T]
 }
 
-type JsonSerDes struct {
+type JsonSerDes[T any] struct {
 }
 
-func (sd *JsonSerDes) Serialize(kvs []*KV) []byte {
+func (sd *JsonSerDes[T]) Serialize(kvs []*KV[T]) []byte {
 	data, err := json.Marshal(kvs)
 	if err != nil {
 		panic(err)
@@ -32,12 +30,12 @@ func (sd *JsonSerDes) Serialize(kvs []*KV) []byte {
 	return data
 }
 
-func (sd *JsonSerDes) Deserialize(data []byte) chan *KV {
-	result := make(chan *KV)
+func (sd *JsonSerDes[T]) Deserialize(data []byte) chan *KV[T] {
+	result := make(chan *KV[T])
 	go func() {
 		defer close(result)
 
-		kvs := make([]*KV, 0)
+		kvs := make([]*KV[T], 0)
 		err := json.Unmarshal(data, &kvs)
 		if err != nil {
 			panic(err)
@@ -52,27 +50,14 @@ func (sd *JsonSerDes) Deserialize(data []byte) chan *KV {
 type TextDes struct {
 }
 
-func (d *TextDes) Deserialize(data []byte) chan *KV {
-	kvs := make(chan *KV)
+func (d *TextDes) Deserialize(data []byte) chan *KV[string] {
+	kvs := make(chan *KV[string])
 	go func() {
 		defer close(kvs)
 		lines := strings.Split(string(data), "\n")
 		for i, line := range lines {
-			kvs <- &KV{Key: strconv.Itoa(i), Value: line}
+			kvs <- &KV[string]{Key: strconv.Itoa(i), Value: line}
 		}
 	}()
 	return kvs
-}
-
-type CSVSer struct {
-}
-
-func (s *CSVSer) Serialize(kvs []*KV) []byte {
-	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
-	for _, kv := range kvs {
-		w.Write([]string{kv.Key, kv.Value})
-	}
-	w.Flush()
-	return buf.Next(buf.Len())
 }

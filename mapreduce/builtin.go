@@ -5,60 +5,45 @@ import (
 	"strings"
 )
 
-func IdentityMapper(kv *KV) []*KV {
-	return []*KV{kv}
+func IdentityMapper[T any](kv *KV[T]) []*KV[T] {
+	return []*KV[T]{kv}
 }
 
-func SwapKVMapper(kv *KV) []*KV {
-	return []*KV{{Key: kv.Value, Value: kv.Key}}
+func SwapKVMapper(kv *KV[string]) []*KV[string] {
+	return []*KV[string]{{Key: kv.Value, Value: kv.Key}}
 }
 
-func SplitValueMapper(kv *KV) []*KV {
-	kvs := make([]*KV, 0)
+func SplitValueMapper(kv *KV[string]) []*KV[string] {
+	kvs := make([]*KV[string], 0)
 	for _, v := range strings.Split(kv.Value, " ") {
-		kvs = append(kvs, &KV{Key: kv.Key, Value: v})
+		kvs = append(kvs, &KV[string]{Key: kv.Key, Value: v})
 	}
 	return kvs
 }
 
-func SumReducer(key string, values chan string) string {
+func SumReducer[T int](key string, values chan int) int {
 	sum := 0
 	for val := range values {
-		i, _ := strconv.Atoi(val)
-		sum += i
+		sum += val
 	}
-	return strconv.Itoa(sum)
+	return sum
 }
 
-func CountReducer(key string, values chan string) string {
+func CountReducer[T any](key string, values chan T) string {
 	sum := 0
-	for {
-		x := <-values
-		if x == "" {
-			break
-		}
+	for _, ok := <-values; ok; {
 		sum++
 	}
 	return strconv.Itoa(sum)
 }
 
-func ChainMapper(mappers ...Mapper) Mapper {
-	if len(mappers) == 0 {
-		return nil
-	}
-	if len(mappers) == 1 {
-		return mappers[0]
-	}
-
-	headMapper := mappers[0]
-	tailMapper := ChainMapper(mappers[1:]...)
-
-	return func(kv *KV) []*KV {
-		allKVs := make([]*KV, 0)
-		kvs := headMapper(kv)
+func ChainMapper[A, B, C any](aMapper Mapper[A, B], bMapper Mapper[B, C]) Mapper[A, C] {
+	return func(kv *KV[A]) []*KV[C] {
+		result := make([]*KV[C], 0)
+		kvs := aMapper(kv)
 		for _, kv := range kvs {
-			allKVs = append(allKVs, tailMapper(kv)...)
+			result = append(result, bMapper(kv)...)
 		}
-		return allKVs
+		return result
 	}
 }

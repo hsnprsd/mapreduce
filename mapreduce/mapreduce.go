@@ -5,31 +5,31 @@ import (
 	"path/filepath"
 )
 
-type Input struct {
+type Input[A any] struct {
 	FilePattern string
-	Des         Des
+	Des         Des[A]
 }
 
-type KV struct {
+type KV[T any] struct {
 	Key   string
-	Value string
+	Value T
 }
 
-type Output struct {
+type Output[A any] struct {
 	FileBase string
-	Ser      Ser
+	Ser      Ser[A]
 }
 
-type MapReduce struct {
-	Input    Input
-	Mapper   Mapper
-	Combiner Reducer
+type MapReduce[I, M, C, R any] struct {
+	Input    Input[I]
+	Mapper   Mapper[I, M]
+	Combiner Reducer[M, C]
 	R        uint32
-	Reducer  Reducer
-	Output   Output
+	Reducer  Reducer[C, R]
+	Output   Output[R]
 }
 
-func (m *MapReduce) Execute() error {
+func (m *MapReduce[I, M, C, R]) Execute() error {
 	// find input files
 	files, err := filepath.Glob(m.Input.FilePattern)
 	if err != nil {
@@ -37,9 +37,9 @@ func (m *MapReduce) Execute() error {
 	}
 	log.Printf("Found %d total input files", len(files))
 
-	mapTasks := make([]MapTask, len(files))
+	mapTasks := make([]MapTask[I, M, C], len(files))
 	for i, file := range files {
-		mapTasks[i] = MapTask{
+		mapTasks[i] = MapTask[I, M, C]{
 			Input:       file,
 			InputDes:    m.Input.Des,
 			Mapper:      m.Mapper,
@@ -49,22 +49,22 @@ func (m *MapReduce) Execute() error {
 		}
 	}
 
-	mapTasksResults := make(chan *MapTaskResult, len(mapTasks))
+	mapTasksResults := make(chan *MapTaskResult[C], len(mapTasks))
 	defer close(mapTasksResults)
 	log.Printf("Executing %d total map tasks", len(mapTasks))
 	for _, t := range mapTasks {
-		go func(t MapTask) {
+		go func(t MapTask[I, M, C]) {
 			mapTasksResults <- t.Execute()
 		}(t)
 	}
 
-	reduceTasks := make([]ReduceTask, m.R)
+	reduceTasks := make([]ReduceTask[C, R], m.R)
 	log.Printf("Executing %d total reduce tasks", len(reduceTasks))
 
-	reducersMapTasksResults := make([]chan *MapTaskResult, m.R)
+	reducersMapTasksResults := make([]chan *MapTaskResult[C], m.R)
 	for i := range reduceTasks {
-		reducersMapTasksResults[i] = make(chan *MapTaskResult, len(mapTasks))
-		reduceTasks[i] = ReduceTask{
+		reducersMapTasksResults[i] = make(chan *MapTaskResult[C], len(mapTasks))
+		reduceTasks[i] = ReduceTask[C, R]{
 			MapTasksResults: reducersMapTasksResults[i],
 			Partition:       i,
 			Reducer:         m.Reducer,
@@ -87,7 +87,7 @@ func (m *MapReduce) Execute() error {
 	reduceTasksResults := make(chan *ReduceTaskResult, len(reduceTasks))
 	defer close(reduceTasksResults)
 	for _, t := range reduceTasks {
-		go func(t ReduceTask) {
+		go func(t ReduceTask[C, R]) {
 			reduceTasksResults <- t.Execute()
 		}(t)
 	}
