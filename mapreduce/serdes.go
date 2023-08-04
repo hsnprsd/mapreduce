@@ -1,13 +1,14 @@
 package mapreduce
 
 import (
+	"bytes"
 	"encoding/json"
-	"strconv"
 	"strings"
+	"unsafe"
 )
 
 type Ser[T any] interface {
-	Serialize(kvs []*KV[T]) []byte
+	Serialize(kv *KV[T]) []byte
 }
 
 type Des[T any] interface {
@@ -22,8 +23,8 @@ type SerDes[T any] interface {
 type JsonSerDes[T any] struct {
 }
 
-func (sd *JsonSerDes[T]) Serialize(kvs []*KV[T]) []byte {
-	data, err := json.Marshal(kvs)
+func (sd *JsonSerDes[T]) Serialize(kv *KV[T]) []byte {
+	data, err := json.Marshal(kv)
 	if err != nil {
 		panic(err)
 	}
@@ -31,20 +32,24 @@ func (sd *JsonSerDes[T]) Serialize(kvs []*KV[T]) []byte {
 }
 
 func (sd *JsonSerDes[T]) Deserialize(data []byte) chan *KV[T] {
-	result := make(chan *KV[T])
+	kvs := make(chan *KV[T])
 	go func() {
-		defer close(result)
+		defer close(kvs)
 
-		kvs := make([]*KV[T], 0)
-		err := json.Unmarshal(data, &kvs)
-		if err != nil {
-			panic(err)
-		}
-		for _, kv := range kvs {
-			result <- kv
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+			kv := KV[T]{}
+			err := json.Unmarshal([]byte(line), &kv)
+			if err != nil {
+				panic(err)
+			}
+			kvs <- &kv
 		}
 	}()
-	return result
+	return kvs
 }
 
 type TextDes struct {
@@ -54,9 +59,9 @@ func (d *TextDes) Deserialize(data []byte) chan *KV[string] {
 	kvs := make(chan *KV[string])
 	go func() {
 		defer close(kvs)
-		lines := strings.Split(string(data), "\n")
-		for i, line := range lines {
-			kvs <- &KV[string]{Key: strconv.Itoa(i), Value: line}
+		lines := bytes.Split(data, []byte("\n"))
+		for _, line := range lines {
+			kvs <- &KV[string]{Key: "", Value: *(*string)(unsafe.Pointer(&line))}
 		}
 	}()
 	return kvs

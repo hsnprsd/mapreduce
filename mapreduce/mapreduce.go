@@ -23,7 +23,7 @@ type Writer[A any] struct {
 type MapReduce[I, M, C, R any] struct {
 	Reader   Reader[I]
 	Mapper   Mapper[I, M]
-	Combiner Reducer[M, C]
+	Combiner Combiner[M, C]
 	R        uint32
 	Reducer  Reducer[C, R]
 	Writer   Writer[R]

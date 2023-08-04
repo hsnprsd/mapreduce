@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type Reducer[T, U any] func(key string, values chan T) U
+type Reducer[T, U any] func(key string, values chan *T) U
 
 type ReduceTask[T, U any] struct {
 	MapTasksResults chan *MapTaskResult[T]
@@ -19,6 +19,13 @@ type ReduceTaskResult struct {
 }
 
 func (t *ReduceTask[T, U]) Execute() *ReduceTaskResult {
+	// output file
+	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))
+	defer f.Close()
+	if err != nil {
+		return &ReduceTaskResult{Err: err}
+	}
+
 	// read mapper outputs
 	input := make(map[string][]T)
 	for r := range t.MapTasksResults {
@@ -40,26 +47,25 @@ func (t *ReduceTask[T, U]) Execute() *ReduceTaskResult {
 		}
 	}
 	// reduce
-	kvs := make([]*KV[U], 0)
 	for k, vs := range input {
-		c := make(chan T)
+		c := make(chan *T)
 		go func() {
 			defer close(c)
 			for _, v := range vs {
-				c <- v
+				c <- &v
 			}
 		}()
 		v := t.Reducer(k, c)
-		kvs = append(kvs, &KV[U]{Key: k, Value: v})
-	}
-	// write output
-	f, err := os.Create(fmt.Sprintf("%s/part-%d", t.Output.FileBase, t.Partition))
-	if err != nil {
-		return &ReduceTaskResult{Err: err}
-	}
-	_, err = f.Write(t.Output.Ser.Serialize(kvs))
-	if err != nil {
-		return &ReduceTaskResult{Err: err}
+
+		kv := &KV[U]{Key: k, Value: v}
+		_, err := f.Write(t.Output.Ser.Serialize(kv))
+		if err != nil {
+			return &ReduceTaskResult{Err: err}
+		}
+		_, err = f.Write([]byte("\n"))
+		if err != nil {
+			return &ReduceTaskResult{Err: err}
+		}
 	}
 
 	return &ReduceTaskResult{}
